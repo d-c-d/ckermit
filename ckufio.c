@@ -8163,12 +8163,14 @@ kpass(name, p) char *name, *p; {
 
     (VOID) ckstrncpy(instance, krb_get_phost(hostname), sizeof(instance));
 
-    if ((hp = gethostbyname(instance)) == NULL)
+#ifdef HADDRLIST
+    hp = ck_copyhostent(gethostbyname(instance));/* safe copy that won't change */
+#else
+    hp = (struct hostentwr *)gethostbyname(instance);
+#endif /* HADDRLIST */
+    if (hp == NULL)
       return(0);
 
-#ifdef HADDRLIST
-    hp = ck_copyhostent(hp);		/* safe copy that won't change */
-#endif /* HADDRLIST */
     bcopy((char *)hp->h_addr, (char *) &faddr, sizeof(faddr));
 
     if (krb_get_pw_in_tkt(name, "", realm, "krbtgt", realm, 1, p) ||

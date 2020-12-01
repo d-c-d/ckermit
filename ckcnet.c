@@ -1433,7 +1433,7 @@ ttbufr() {                              /* TT Buffer Read */
     network type - value defined in ckunet.h.
 */
 #ifdef TCPSOCKET
-struct hostent *
+struct hostentwr *
 #ifdef CK_ANSIC
 ck_copyhostent(struct hostent * h)
 #else /* CK_ANSIC */
@@ -1451,7 +1451,7 @@ ck_copyhostent(h) struct hostent * h;
      *  #define h_addr  h_addr_list[0]
      */
 #define HOSTENTCNT 5
-    static struct hostent hosts[HOSTENTCNT] = {{NULL,NULL,0,0,NULL},
+    static struct hostentwr hosts[HOSTENTCNT]={{NULL,NULL,0,0,NULL},
                                                {NULL,NULL,0,0,NULL},
                                                {NULL,NULL,0,0,NULL},
                                                {NULL,NULL,0,0,NULL},
@@ -2423,7 +2423,7 @@ int
 tcpsocket_open(name,lcl,nett,timo) char * name; int * lcl; int nett; int timo {
     int on = 1;
     static struct servent *service, servrec;
-    static struct hostent *host;
+    static struct hostentwr *host;
     static struct sockaddr_in saddr;
     static
 #ifdef UCX50
@@ -2524,10 +2524,9 @@ tcpsocket_open(name,lcl,nett,timo) char * name; int * lcl; int nett; int timo {
             printf(" Reverse DNS Lookup... ");
             fflush(stdout);
         }
-        host = gethostbyaddr((char *)&saddr.sin_addr,4,PF_INET);
+        host = ck_copyhostent(gethostbyaddr((char *)&saddr.sin_addr,4,PF_INET));
         debug(F110,"tcpsocket_open gethostbyaddr",host ? "OK" : "FAILED",0);
         if (host) {
-            host = ck_copyhostent(host);
             debug(F100,"tcpsocket_open gethostbyaddr != NULL","",0);
             if (!quiet) {
                 printf("(OK)\n");
@@ -2611,7 +2610,7 @@ tcpsrv_open(name,lcl,nett,timo) char * name; int * lcl; int nett; int timo; {
     SOCKOPT_T on = 1;
     int ready_to_accept = 0;
     static struct servent *service, *service2, servrec;
-    static struct hostent *host;
+    static struct hostentwr *host;
     static struct sockaddr_in saddr;
     struct sockaddr_in l_addr;
     GSOCKNAME_T l_slen;
@@ -2969,8 +2968,7 @@ tcpsrv_open(name,lcl,nett,timo) char * name; int * lcl; int nett; int timo; {
                 printf(" Reverse DNS Lookup... ");
                 fflush(stdout);
             }
-            if (host = gethostbyaddr((char *)&saddr.sin_addr,4,PF_INET)) {
-                host = ck_copyhostent(host);
+            if (host = ck_copyhostent(gethostbyaddr((char *)&saddr.sin_addr,4,PF_INET))) {
                 debug(F100,"tcpsrv_open gethostbyaddr != NULL","",0);
                 if (!quiet) {
                     printf("(OK)\n");
@@ -3116,14 +3114,13 @@ ckname2addr(name) char * name;
 #ifdef HPUX5
     return("");
 #else
-    struct hostent *host;
+    struct hostentwr *host;
 
     if (name == NULL || *name == '\0')
         return("");
 
-    host = gethostbyname(name);
+    host = ck_copyhostent(gethostbyname(name));
     if ( host ) {
-        host = ck_copyhostent(host);
         return(inet_ntoa(*((struct in_addr *) host->h_addr)));
     }
     return("");
@@ -3136,16 +3133,15 @@ ckaddr2name(addr) char * addr;
 #ifdef HPUX5
     return("");
 #else
-    struct hostent *host;
+    struct hostentwr *host;
     struct in_addr sin_addr;
 
     if (addr == NULL || *addr == '\0')
         return("");
 
     sin_addr.s_addr = inet_addr(addr);
-    host = gethostbyaddr((char *)&sin_addr,4,AF_INET);
+    host = ck_copyhostent(gethostbyaddr((char *)&sin_addr,4,AF_INET));
     if (host) {
-        host = ck_copyhostent(host);
         return((char *)host->h_name);
     }
     return("");
@@ -3159,7 +3155,7 @@ char *
 ckgetpeer() {
 #ifdef TCPSOCKET
     static char namebuf[256];
-    static struct hostent *host;
+    static struct hostentwr *host;
     static struct sockaddr_in saddr;
 #ifdef GPEERNAME_T
     static GPEERNAME_T saddrlen;
@@ -3209,9 +3205,8 @@ ckgetpeer() {
         debug(F111,"ckgetpeer failure",ckitoa(ttyfd),errno);
         return(NULL);
     }
-    host = gethostbyaddr((char *)&saddr.sin_addr,4,AF_INET);
+    host = ck_copyhostent(gethostbyaddr((char *)&saddr.sin_addr,4,AF_INET));
     if (host) {
-        host = ck_copyhostent(host);
         ckstrncpy(namebuf,(char *)host->h_name,80);
     } else {
         ckstrncpy(namebuf,(char *)inet_ntoa(saddr.sin_addr),80);
@@ -3241,7 +3236,7 @@ ckgetfqhostname(name) char * name;
 #else /* If the following code dumps core, define NOCKGETFQHOST and rebuild. */
 
     static char namebuf[256];
-    struct hostent *host=NULL;
+    struct hostentwr *host=NULL;
     struct sockaddr_in r_addr;
     int i;
 
@@ -3255,9 +3250,8 @@ ckgetfqhostname(name) char * name;
 
     bzero((char *)&r_addr, sizeof(r_addr));
 
-    host = gethostbyname(namebuf);
+    host = ck_copyhostent(gethostbyname(namebuf));
     if (host) {
-        host = ck_copyhostent(host);
         debug(F100,"ckgetfqhn() gethostbyname != NULL","",0);
         r_addr.sin_family = host->h_addrtype;
 #ifdef HADDRLIST
@@ -3291,9 +3285,8 @@ ckgetfqhostname(name) char * name;
         if (isWin95())
           sleep(1);
 #endif /* NT */
-        host = gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET);
+        host = ck_copyhostent(gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET));
         if (host) {
-            host = ck_copyhostent(host);
             debug(F100,"ckgetfqhn() gethostbyaddr != NULL","",0);
             ckstrncpy(namebuf, host->h_name, 256);
         }
@@ -3541,7 +3534,7 @@ netopen(name, lcl, nett) char *name; int *lcl, nett; {
     int on = 1;
 #endif /* SO_OOBINLINE */
     struct servent *service=NULL;
-    struct hostent *host=NULL;
+    struct hostentwr *host=NULL;
     struct sockaddr_in r_addr;
     struct sockaddr_in sin;
     struct sockaddr_in l_addr;
@@ -4190,9 +4183,8 @@ _PROTOTYP(SIGTYP x25oobh, (int) );
             printf(" DNS Lookup... ");
             fflush(stdout);
         }
-        if ((host = gethostbyname(namecopy)) != NULL) {
+        if ((host = ck_copyhostent(gethostbyname(namecopy))) != NULL) {
             debug(F110,"netopen gethostbyname != NULL",namecopy,0);
-            host = ck_copyhostent(host);
             dns = 1;                    /* Remember we performed dns lookup */
             r_addr.sin_family = host->h_addrtype;
             if (tcp_rdns && host->h_name && host->h_name[0]
@@ -4903,9 +4895,8 @@ _PROTOTYP(SIGTYP x25oobh, (int) );
             printf(" Reverse DNS Lookup... ");
             fflush(stdout);
         }
-        if (host = gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET)) {
+        if (host = ck_copyhostent(gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET))) {
             char * s;
-            host = ck_copyhostent(host);
             debug(F100,"netopen gethostbyname != NULL","",0);
             if (!quiet) {
                 printf("(OK)\n");
@@ -7031,7 +7022,7 @@ getlocalipaddrs(buf,bufsz,index)
 /* getlocalipaddrs */ {
 #ifndef datageneral
     char localhost[256];
-    struct hostent * host=NULL;
+    struct hostentwr * host=NULL;
     struct sockaddr_in l_sa;
     struct sockaddr_in r_sa;
     GSOCKNAME_T slen = sizeof(struct sockaddr_in);
@@ -7066,11 +7057,14 @@ getlocalipaddrs(buf,bufsz,index)
     if (!rc) {
         /* resolve host name for local address */
         debug(F110,"getlocalipaddrs","calling gethostbyname()",0);
-        host = gethostbyname(localhost);
+#ifdef HADDRLIST
+        host = ck_copyhostent(gethostbyname(localhost));
+#else
+        host = (struct hostentwr *)gethostbyname(localhost);
+#endif
         /* debug(F111,"getlocalipaddrs","gethostbyname() returned",host); */
         if (host) {
 #ifdef HADDRLIST
-            host = ck_copyhostent(host);
             if ( index < 0 || index > 63 || !host->h_addr_list[index] ) {
                 buf[0] = '\0';
                 return(-1);
@@ -10253,7 +10247,7 @@ http_open(hostname, svcname, use_ssl, rdns_name, rdns_len, agent)
     int on = 1;
 #endif /* SO_OOBINLINE */
     struct servent *service=NULL;
-    struct hostent *host=NULL;
+    struct hostentwr *host=NULL;
     struct sockaddr_in r_addr;
     struct sockaddr_in sin;
     struct sockaddr_in l_addr;
@@ -10411,9 +10405,8 @@ http_open(hostname, svcname, use_ssl, rdns_name, rdns_len, agent)
             printf(" DNS Lookup... ");
             fflush(stdout);
         }
-        if ((host = gethostbyname(http_ip[0] ? http_ip : hostname)) != NULL) {
+        if ((host = ck_copyhostent(gethostbyname(http_ip[0] ? http_ip : hostname))) != NULL) {
             debug(F100,"http_open gethostbyname != NULL","",0);
-            host = ck_copyhostent(host);
             dns = 1;                    /* Remember we performed dns lookup */
             r_addr.sin_family = host->h_addrtype;
             if (tcp_rdns && host->h_name && host->h_name[0] && (rdns_len > 0)
@@ -10787,9 +10780,8 @@ http_open(hostname, svcname, use_ssl, rdns_name, rdns_len, agent)
             printf(" Reverse DNS Lookup... ");
             fflush(stdout);
         }
-        if (host = gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET)) {
+        if (host = ck_copyhostent(gethostbyaddr((char *)&r_addr.sin_addr,4,PF_INET))) {
             char * s;
-            host = ck_copyhostent(host);
             debug(F100,"http_open gethostbyname != NULL","",0);
             if (!quiet) {
                 printf("(OK)\n");
@@ -13913,11 +13905,10 @@ fwdx_open_client_channel(channel) int channel; {
 #endif /* INADDR_NONE */
              )
         {
-            struct hostent *host;
-            host = gethostbyname(buf);
+            struct hostentwr *host;
+            host = ck_copyhostent(gethostbyname(buf));
             if ( host == NULL )
                 return(-1);
-            host = ck_copyhostent(host);
 #ifdef HADDRLIST
 #ifdef h_addr
             /* This is for trying multiple IP addresses - see <netdb.h> */
@@ -14050,14 +14041,13 @@ fwdx_server_avail() {
 #endif /* INADDR_NONE */
          )
     {
-        struct hostent *host;
-        host = gethostbyname(buf);
+        struct hostentwr *host;
+        host = ck_copyhostent(gethostbyname(buf));
         if ( host == NULL ) {
             debug(F110,"fwdx_server_avail() gethostbyname() failed",
                    myipaddr,0);
             return(-1);
         }
-        host = ck_copyhostent(host);
 #ifdef HADDRLIST
 #ifdef h_addr
         /* This is for trying multiple IP addresses - see <netdb.h> */

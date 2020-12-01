@@ -1313,10 +1313,21 @@ _PROTOTYP( int recvbuf, (int, int) ) ;
 _PROTOTYP(int dontroute, (int, int));
 #endif /* SO_DONTROUTE */
 #endif /* SOL_SOCKET */
+#ifdef __CYGWIN__
+struct	hostentwr {
+	char	*h_name;	/* official name of host */
+	char	**h_aliases;	/* alias list */
+	short	h_addrtype;	/* host address type */
+	short	h_length;	/* length of address */
+	char	**h_addr_list;	/* list of addresses from name server */
+};
+#else
+#define hostentwr hostent
+#endif
 _PROTOTYP( int getlocalipaddr, (VOID));
 _PROTOTYP( int getlocalipaddrs, (char *,int,int));
 _PROTOTYP( char * ckgetfqhostname,(char *));
-_PROTOTYP( struct hostent * ck_copyhostent,(struct hostent *));
+_PROTOTYP( struct hostentwr * ck_copyhostent,(struct hostent *));
 _PROTOTYP( char * ckname2addr, (char *));
 _PROTOTYP( char * ckaddr2name, (char *));
 

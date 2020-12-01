@@ -4083,7 +4083,7 @@ k4_auth_is(parsedat,end_sub) unsigned char *parsedat; int end_sub;
     char * data = &parsedat[5];
     int    cnt = end_sub - 5;
     extern char myipaddr[];
-    struct hostent *host;
+    struct hostentwr *host;
     struct in_addr inaddr;
     int i;
 
@@ -4116,11 +4116,12 @@ k4_auth_is(parsedat,end_sub) unsigned char *parsedat; int end_sub;
 
         /* Get Instance */
         inaddr.s_addr = inet_addr(myipaddr);
-        host = gethostbyaddr((unsigned char *)&inaddr,4,PF_INET);
-        if ( host ) {
 #ifdef HADDRLIST
-            host = ck_copyhostent(host);
+        host = ck_copyhostent(gethostbyaddr((unsigned char *)&inaddr,4,PF_INET));
+#else
+        host = (struct hostentwr *)gethostbyaddr((unsigned char *)&inaddr,4,PF_INET);
 #endif /* HADDRLIST */
+        if ( host ) {
             ckstrncpy(instance,host->h_name,INST_SZ);
             for ( i=0;i<INST_SZ;i++ ) {
                 if ( instance[i] == '.' )
@@ -6054,7 +6055,7 @@ k5_auth_is(how,data,cnt) int how; unsigned char *data; int cnt;
     char localname[MAXHOSTNAMELEN];
     char service_name[MAXHOSTNAMELEN+10];
     char **service;
-    struct hostent *hp;
+    struct hostentwr *hp;
 
     data += 4;                                  /* Point to status byte */
     cnt -= 4;
@@ -6084,13 +6085,15 @@ k5_auth_is(how,data,cnt) int how; unsigned char *data; int cnt;
             auth_finished(AUTH_REJECT);
             return AUTH_FAILURE;
         }
-        if (!(hp = gethostbyname(localname))) {
+#ifdef HADDRLIST
+        hp = ck_copyhostent(gethostbyname(localname));
+#else
+        hp = (struct hostentwr *)gethostbyname(localname);
+#endif /* HADDRLIST */
+        if (!hp) {
             auth_finished(AUTH_REJECT);
             return AUTH_FAILURE;
         }
-#ifdef HADDRLIST
-        hp = ck_copyhostent(hp);
-#endif /* HADDRLIST */
         strncpy(localname, hp->h_name, sizeof(localname) - 1);
         localname[sizeof(localname) - 1] = '\0';
 
@@ -8951,17 +8954,18 @@ one_addr(krb5_address *a)
 one_addr(a) krb5_address *a;
 #endif
 {
-    struct hostent *h;
+    struct hostentwr *h;
     extern tcp_rdns;
 
     if ((a->addrtype == ADDRTYPE_INET) &&
         (a->length == 4)) {
         if (tcp_rdns != SET_OFF) {
-            h = gethostbyaddr(a->contents, 4, AF_INET);
-            if (h) {
 #ifdef HADDRLIST
-                h = ck_copyhostent(h);
+            h = ck_copyhostent(gethostbyaddr(a->contents, 4, AF_INET));
+#else
+            h = (struct hostentwr *)gethostbyaddr(a->contents, 4, AF_INET);
 #endif /* HADDRLIST */
+            if (h) {
                 printf("%s (%d.%d.%d.%d)", h->h_name,
                         a->contents[0], a->contents[1],
                         a->contents[2], a->contents[3]);

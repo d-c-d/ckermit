@@ -13073,7 +13073,7 @@ initconn() {
 #else
             char * agent = "C-Kermit";
 #endif /* OS2 */
-            register struct hostent *hp = 0;
+            register struct hostentwr *hp = 0;
             struct servent *destsp;
             char host[512], *p, *q;
 #ifdef IP_TOS
@@ -13105,9 +13105,10 @@ initconn() {
                 hisctladdr.sin_family = AF_INET;
             } else {
                 debug(F110,"initconn B",host,0);
-                hp = gethostbyname(host);
 #ifdef HADDRLIST
-                hp = ck_copyhostent(hp); /* make safe copy that won't change */
+                hp = ck_copyhostent(gethostbyname(host));/* make safe copy that won't change */
+#else
+                hp = (struct hostentwr *)gethostbyname(host);
 #endif /* HADDRLIST */
                 if (hp == NULL) {
                     fprintf(stderr, "ftp: %s: Unknown host\n", host);
@@ -14633,7 +14634,7 @@ static struct in_addr inaddrx;
 
 static char *
 ftp_hookup(host, port, tls) char * host; int port; int tls; {
-    register struct hostent *hp = 0;
+    register struct hostentwr *hp = 0;
 #ifdef IP_TOS
 #ifdef IPTOS_THROUGHPUT
     int tos;
@@ -14693,9 +14694,10 @@ ftp_hookup(host, port, tls) char * host; int port; int tls; {
         ckstrncpy(hostnamebuf, hostname, MAXHOSTNAMELEN);
     } else {
         debug(F110,"ftp hookup B",hostname,0);
-        hp = gethostbyname(hostname);
 #ifdef HADDRLIST
-        hp = ck_copyhostent(hp);        /* make safe copy that won't change */
+        hp = ck_copyhostent(gethostbyname(hostname));/* make safe copy that won't change */
+#else
+        hp = (struct hostentwr *)gethostbyname(hostname);
 #endif /* HADDRLIST */
         if (hp == NULL) {
             fprintf(stderr, "ftp: %s: Unknown host\n", host);
