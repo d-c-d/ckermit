@@ -513,6 +513,7 @@ VOID
 #else
 #ifdef STRATUS
 int
+#else
 #ifdef __GNUC__
 int
 #else
