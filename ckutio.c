@@ -11647,8 +11647,13 @@ msleep(m) int m; {
     x = select( 0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &tv );
     debug(F101,"msleep OSF40 select","",x);
 #else
+#ifdef __CYGWIN__
+    x = select( 0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &tv );
+    debug(F101,"msleep __linux__ select","",x);
+#else
     x = select( 0, (int *)0, (int *)0, (int *)0, &tv );
     debug(F101,"msleep catch-all select","",x);
+#endif /* CYGWIN */
 #endif /* PTX */
 #endif /* OSF40 */
 #endif /* HP1000 */

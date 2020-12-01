@@ -9159,7 +9159,7 @@ char *s;        /* a string */
 #ifndef CK_CURPOS
 /* Dummies for when cursor control is not supported */
 int
-ck_curpos(row, col) {
+ck_curpos(row, col) int row, col; {
     return(-1);
 }
 

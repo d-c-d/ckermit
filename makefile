@@ -6134,6 +6134,7 @@ linux:
 	then echo -lresolv; fi` \
 	`if test -f /usr/lib64/libcrypt.a || test -f /usr/lib64/libcrypt.so \
 	|| test -f /usr/lib/libcrypt.a || test -f /usr/lib/libcrypt.so \
+	|| test -f /usr/lib/libcrypt.dll.a \
 	|| ls /lib/x86_64-linux-gnu/libcrypt.* > /dev/null 2> /dev/null; \
 	then echo -lcrypt; fi` \
 	`if test -f /usr/lib64/liblockdev.a || \

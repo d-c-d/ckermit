@@ -1018,10 +1018,17 @@ static CHAR *ucbuf = NULL;
 static int ucbufsiz = 0;
 static unsigned int nout = 0;           /* Number of chars in ucbuf */
 
+#ifdef CK_POSIX_SIG
+static sigjmp_buf recvcancel;
+static sigjmp_buf sendcancel;
+static sigjmp_buf ptcancel;
+static sigjmp_buf jcancel;
+#else
 static jmp_buf recvcancel;
 static jmp_buf sendcancel;
 static jmp_buf ptcancel;
 static jmp_buf jcancel;
+#endif
 static int ptabflg = 0;
 
 /* Protection level symbols */
